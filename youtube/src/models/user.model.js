@@ -56,7 +56,7 @@ const userSchema = new Schema(
 //logic of password encrypting...
 userSchema.pre("save", async function(next) {
     if(!this.isModified("password")) return next()
-    this.password = bcrypt.hash(this.password,10)
+    this.password = await bcrypt.hash(this.password,10)
     next()
 })
 //isPasswordCorrect method is use for password checking...
