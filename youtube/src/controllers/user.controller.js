@@ -391,13 +391,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           $size: "$subscribed",
         },
         isSubscribed: {
-          $cond:{
-            if:{$in:[req.user?._id,"$subscribers.subscriber"]},
-            then :true,
-            else:false
-          }
-
-        }
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     {
@@ -411,13 +410,68 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         subscribedChannelCount: 1,
         isSubscribed: 1,
       },
-    }
+    },
   ]);
   if (!channel?.length) {
     throw new ApiError("channel is not found", 404);
   }
-  console.log(channel)
-  return res.status(200).json(new ApiResponse(200, channel[0], "user Channel profile fetched successfully"));
+  console.log(channel);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        channel[0],
+        "user Channel profile fetched successfully"
+      )
+    );
+});
+// get watchHistory
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullname: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ])
+  return res
+   .status(200)
+   .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"));
 });
 
 export {
@@ -426,8 +480,10 @@ export {
   LogOutUser,
   refreshAccessToken,
   changePassword,
+  currentUser,
   updateAccountDetails,
   uptadeAvatar,
   uptadeCoverImage,
-  getUserChannelProfile
+  getUserChannelProfile,
+  getWatchHistory,
 };
