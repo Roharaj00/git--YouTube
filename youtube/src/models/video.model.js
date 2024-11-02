@@ -1,5 +1,5 @@
 import mongoose,{Schema}from "mongoose";
-import mongooseAggregatePaginate from "mongooseAggregatePaginate";//npm install mongoose-aggregate-paginate-v2
+// import mongooseAggregatePaginate from "mongooseAggregatePaginate";//npm install mongoose-aggregate-paginate-v2
 
 
 const videoSchema = new Schema({
@@ -21,7 +21,7 @@ const videoSchema = new Schema({
     },
     duration:{
         type: Number,//cloudnary url,
-        required: true
+        // required: true
     },
     view:{
         type: Number,
@@ -35,11 +35,29 @@ const videoSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
         required: true
-    }
-
+    },
+    likes:[{
+        type: Schema.Types.ObjectId,
+        ref: "User"
+    }],
+    likesCount:{
+        type: Number,
+        default: 0
+    },
+    // commentLikes:[{
+    //     type: Schema.Types.ObjectId,
+    //     ref: "User"
+    // }]
+    
     
 }, { timestamps: true });
+videoSchema.pre('save', function(next) {
+  if (this.isModified('likes')) {
+      this.likesCount = this.likes.length;
+  }
+  next();
+});
 
-videoSchema.plugin(mongooseAggregatePaginate)
+// videoSchema.plugin(mongooseAggregatePaginate)
 
 export const Video = mongoose.model("Video", videoSchema);
